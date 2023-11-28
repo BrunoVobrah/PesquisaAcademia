@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Mapa com Academias Próximas</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_DE_API&libraries=places&callback=initMap"></script>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Academias Próximas</h1>
+  <!-- Dropdown para seleção de distância -->
+  <label for="distancia">Selecione a distância:</label>
+  <select id="distancia" onchange="buscarAcademias()">
+    <option value="500">500 metros</option>
+    <option value="1000">1000 metros</option>
+    <option value="2000">2000 metros</option>
+    <option value="5000">5000 metros</option>
+  </select>
+
+  <!-- MAPA -->
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let service;
+    let userLocation;
+    let markers = {};
+
+    function initMap() {
+      navigator.geolocation.getCurrentPosition(function (position) {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: userLocation,
+          zoom: 15
+        });
+
+        new google.maps.Marker({
+          position: userLocation,
+          map: map,
+          title: "Sua localização"
+        });
+
+        service = new google.maps.places.PlacesService(map);
+
+        markers['500'] = [];
+        markers['1000'] = [];
+        markers['2000'] = [];
+        markers['5000'] = [];
+
+        buscarAcademias();
+      });
+    }
+
+    function buscarAcademias() {
+      const distanciaSelecionada = document.getElementById("distancia").value;
+      const distanciaAnterior = document.getElementById("distancia").previousElementSibling ? document.getElementById("distancia").previousElementSibling.value : 0;
+
+      if (distanciaSelecionada === '500') {
+        limparMarcadores();
+      } else if (distanciaSelecionada === '1000') {
+        limparMarcadores();
+        exibirMarcadores('500');
+      } else if (distanciaSelecionada === '2000') {
+        limparMarcadores();
+        exibirMarcadores('1000');
+        exibirMarcadores('500');
+      } else if (distanciaSelecionada === '5000') {
+        exibirMarcadores('5000');
+      }
+
+      service.nearbySearch(
+        {
+          location: userLocation,
+          radius: parseInt(distanciaSelecionada),
+          type: "gym"
+        },
+        function (results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            console.log("Academias encontradas (" + distanciaSelecionada + " metros):");
+            for (let i = 0; i < results.length; i++) {
+              console.log(results[i].name);
+              criarMarcador(results[i], distanciaSelecionada);
+            }
+          }
+        }
+      );
+    }
+
+    function criarMarcador(place, distancia) {
+      const marker = new google.maps.Marker({
+        position: place.geometry.location,
+        map: map,
+        title: place.name
+      });
+      markers[distancia].push(marker);
+    }
+
+    function limparMarcadores() {
+      for (const distancia in markers) {
+        if (markers.hasOwnProperty(distancia)) {
+          for (let i = 0; i < markers[distancia].length; i++) {
+            markers[distancia][i].setMap(null);
+          }
+          markers[distancia] = [];
+        }
+      }
+    }
+
+    function exibirMarcadores(distancia) {
+      for (let i = 0; i < markers[distancia].length; i++) {
+        markers[distancia][i].setMap(map);
+      }
+    }
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_DE_API&libraries=places&callback=initMap"></script>
+</body>
+
+</html>

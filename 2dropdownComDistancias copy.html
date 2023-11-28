@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Mapa com Academias Próximas</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Academias Próximas</h1>
+  <!-- Dropdown para seleção de distância -->
+  <label for="distancia">Selecione a distância:</label>
+  <select id="distancia" onchange="buscarAcademias()">
+    <option value="500">500 metros</option>
+    <option value="1000">1000 metros</option>
+    <option value="2000">2000 metros</option>
+    <option value="5000">5000 metros</option>
+  </select>
+
+  <!-- MAPA -->
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let service;
+    let userLocation;
+    let markers = []; // Array para armazenar mercadores
+
+    // Função para inicializar o mapa
+    function initMap() {
+      // Geolocalização - obter localização atual
+      navigator.geolocation.getCurrentPosition(function (position) {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        console.log("Localização obtida:", userLocation); // Verificar a posição obtida
+
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: userLocation,
+          zoom: 15
+        });
+
+        // Marcador para a localização do usuário
+        new google.maps.Marker({
+          position: userLocation,
+          map: map,
+          title: "Sua localização"
+        });
+
+        service = new google.maps.places.PlacesService(map);
+
+        // Chamar a função buscarAcademias() ao carregar a página
+        buscarAcademias();
+      });
+    }
+
+    // Função para buscar academias com base na distância selecionada
+    function buscarAcademias() {
+      const distanciaSelecionada = parseInt(document.getElementById("distancia").value);
+
+      //Limpar marcadores existentes antes de adicionar novos
+      limparMarcadores();
+
+      service.nearbySearch(
+        {
+          location: userLocation,
+          radius: distanciaSelecionada,
+          type: "gym"
+        },
+        function (results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            console.log("Academias encontradas:");
+            for (let i = 0; i < results.length; i++) {
+              console.log(results[i].name); // Log dos nomes das academias encontradas
+              criarMarcador(results[i]);
+            }
+          }
+        }
+      );
+    }
+
+    // Função para criar marcadores das academias encontradas
+    function criarMarcador(place) {
+      const marker = new google.maps.Marker({
+        position: place.geometry.location,
+        map: map,
+        title: place.name
+      });
+      markers.push(marker); // Adicionar o marcador ao array
+    }
+
+    // Função para limpar os marcadores do mapa
+    function limparMarcadores() {
+      for (let i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+      markers = []; // Limpar o array de marcadores
+    }
+
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_DE_API&libraries=places&callback=initMap"></script>
+</body>
+
+</html>
